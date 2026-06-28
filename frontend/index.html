@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>FoodieGo - Order Food Online</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./static/css/style.css">
+</head>
+<body>
+<header class="topbar">
+    <div class="brand" onclick="goHome()"><div class="brand-icon">FG</div><span>FoodieGo</span></div>
+    <div class="location-pill"><span>📍</span><div><small>Deliver to</small><strong>Ghaziabad</strong></div></div>
+    <nav class="nav-actions">
+        <span id="userBadge" class="user-badge">Guest</span>
+        <button class="ghost-btn" onclick="openAuthModal('login')" id="loginBtn">Login</button>
+        <button class="ghost-btn hidden" onclick="logout()" id="logoutBtn">Logout</button>
+        <button class="ghost-btn hidden" onclick="openAdminModal()" id="adminBtn">Admin</button>
+        <button class="ghost-btn" onclick="openTrackModal()">Track Order</button>
+        <button class="cart-btn" onclick="toggleCart()">🛒 Cart <span id="cartCount">0</span></button>
+    </nav>
+</header>
+
+<section class="hero">
+    <div class="hero-content">
+        <span class="hero-tag">Fast delivery • Fresh food • Secure checkout</span>
+        <h1>Order food from your favourite restaurants</h1>
+        <p>Discover top-rated restaurants, explore delicious menus, pay safely, and track orders live.</p>
+        <div class="search-box"><span>🔎</span><input type="text" id="searchInput" placeholder="Search restaurant, cuisine, or location"><button onclick="applyFilters()">Search</button></div>
+    </div>
+</section>
+
+<main class="page">
+    <section class="quick-section">
+        <div class="section-heading"><h2>What are you craving?</h2><p>Choose from popular categories</p></div>
+        <div class="category-row" id="categoryRow"><button class="category-card active" onclick="selectCuisine('')"><span>🍽️</span><strong>All</strong></button></div>
+    </section>
+
+    <section class="offer-strip">
+        <div><strong>🔥 Weekend Feast</strong><span>Free delivery above ₹499</span></div>
+        <div><strong>⚡ Live Tracking</strong><span>Track rider and ETA after order</span></div>
+        <div><strong>💳 Payment</strong><span>COD, UPI, and Card mock gateway</span></div>
+    </section>
+
+    <section class="restaurant-section">
+        <div class="section-heading row-between"><div><h2>Restaurants near you</h2><p id="restaurantCount">Loading restaurants...</p></div><select id="sortSelect" onchange="sortRestaurants()"><option value="rating">Sort by Rating</option><option value="time">Sort by Delivery Time</option><option value="price">Sort by Price for Two</option></select></div>
+        <div class="restaurant-grid" id="restaurantsGrid"></div>
+    </section>
+</main>
+
+<aside class="menu-panel" id="menuPanel">
+    <div class="panel-header"><div><h2 id="menuRestaurantName">Restaurant</h2><p id="menuRestaurantMeta">Menu</p></div><button class="close-btn" onclick="closeMenu()">×</button></div>
+    <div class="restaurant-offer" id="restaurantOffer"></div>
+    <div id="menuContent" class="menu-content"></div>
+</aside>
+
+<aside class="cart-drawer" id="cartDrawer">
+    <div class="panel-header"><div><h2>Your Cart</h2><p id="cartRestaurantName">No restaurant selected</p></div><button class="close-btn" onclick="toggleCart()">×</button></div>
+    <div id="cartItems" class="cart-items"></div>
+    <div class="bill-box" id="billBox"><div><span>Subtotal</span><strong id="subtotalAmount">₹0</strong></div><div><span>Delivery Fee</span><strong id="deliveryFee">₹0</strong></div><div><span>Platform Fee</span><strong id="platformFee">₹0</strong></div><div class="total-line"><span>Total</span><strong id="totalAmount">₹0</strong></div></div>
+    <button class="checkout-btn" onclick="openCheckoutModal()">Proceed to Checkout</button>
+</aside>
+
+<div class="overlay" id="overlay" onclick="closeAllPanels()"></div>
+
+<div class="modal" id="authModal"><div class="modal-card"><div class="panel-header"><div><h2 id="authTitle">Login</h2><p>Access your FoodieGo account</p></div><button class="close-btn" onclick="closeAuthModal()">×</button></div><form id="authForm"><div id="registerFields" class="hidden"><label>Name</label><input id="authName" placeholder="Your name"><label>Phone</label><input id="authPhone" placeholder="Phone number"></div><label>Email</label><input id="authEmail" type="email" placeholder="email@example.com" required><label>Password</label><input id="authPassword" type="password" placeholder="Password" required><button class="checkout-btn" type="submit" id="authSubmitBtn">Login</button></form><p class="switch-text"><span id="authSwitchText">New user?</span> <button onclick="switchAuthMode()" id="authSwitchBtn">Create account</button></p><div class="demo-login"><strong>Demo:</strong> customer@foodiego.com / Customer@123<br><strong>Admin:</strong> admin@foodiego.com / Admin@123</div></div></div>
+
+<div class="modal" id="checkoutModal"><div class="modal-card"><div class="panel-header"><div><h2>Checkout</h2><p>Confirm delivery and payment</p></div><button class="close-btn" onclick="closeCheckoutModal()">×</button></div><form id="checkoutForm"><label>Full Name</label><input id="customerName" required><label>Phone</label><input id="customerPhone" required><label>Flat / House No.</label><input id="addrFlat" required><label>Area / Street</label><input id="addrArea" required><label>City</label><input id="addrCity" value="Ghaziabad" required><label>Pincode</label><input id="addrPincode" maxlength="6" required><label>Landmark</label><input id="addrLandmark"><label>Payment Method</label><select id="paymentMethod"><option value="COD">Cash on Delivery</option><option value="UPI">UPI Mock Payment</option><option value="CARD">Card Mock Payment</option></select><button type="submit" class="checkout-btn">Place Order</button></form><div id="orderSuccess" class="success-box hidden"></div></div></div>
+
+<div class="modal" id="trackModal"><div class="modal-card"><div class="panel-header"><div><h2>Track Order</h2><p>Enter your order ID</p></div><button class="close-btn" onclick="closeTrackModal()">×</button></div><div class="track-form"><input type="number" id="trackOrderId" placeholder="Order ID"><button onclick="trackOrder()">Track</button></div><div id="trackResult"></div></div></div>
+
+<div class="modal" id="adminModal"><div class="modal-card wide"><div class="panel-header"><div><h2>Restaurant Admin Panel</h2><p>Manage restaurants, menu, and orders</p></div><button class="close-btn" onclick="closeAdminModal()">×</button></div><div class="admin-tabs"><button onclick="loadAdminOrders()">Orders</button><button onclick="showCreateRestaurant()">Add Restaurant</button><button onclick="showCreateMenuItem()">Add Menu Item</button></div><div id="adminContent" class="admin-content"></div></div></div>
+
+<footer class="footer"><div><h3>FoodieGo</h3><p>Fresh meals delivered fast.</p></div><p>© 2026 FoodieGo. All rights reserved.</p></footer>
+<script>window.API_BASE_URL = "https://YOUR-BACKEND-CLOUD-RUN-URL";</script>
+<script src="./static/js/app.js"></script>
+</body>
+</html>

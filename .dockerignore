@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+.env
+venv
+.venv
+foodiego.db
+instance/
+gha-creds-*.json
+gcp-sa-key.json
