@@ -13,8 +13,6 @@ env:
   INSTANCE_CONNECTION_NAME: ${{ secrets.INSTANCE_CONNECTION_NAME }}
   DB_NAME: ${{ secrets.DB_NAME }}
   DB_USER: ${{ secrets.DB_USER }}
-  DB_SECRET_NAME: ${{ secrets.DB_SECRET_NAME }}
-  APP_SECRET_NAME: ${{ secrets.APP_SECRET_NAME }}
   SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
 jobs:
@@ -63,7 +61,7 @@ jobs:
             --service-account "$SERVICE_ACCOUNT_EMAIL" \
             --add-cloudsql-instances "$INSTANCE_CONNECTION_NAME" \
             --set-env-vars "DB_NAME=$DB_NAME,DB_USER=$DB_USER,INSTANCE_CONNECTION_NAME=$INSTANCE_CONNECTION_NAME" \
-            --set-secrets "DB_PASS=${DB_SECRET_NAME}:latest,SECRET_KEY=${APP_SECRET_NAME}:latest"
+            --set-secrets "DB_PASS=foodiego-db-pass:latest,SECRET_KEY=foodiego-secret-key:latest"
 
       - name: Show Cloud Run URL
         run: |
