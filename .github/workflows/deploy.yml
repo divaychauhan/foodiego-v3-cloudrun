@@ -1,8 +1,9 @@
-name: Deploy FoodieGo v3 to Cloud Run
+name: Deploy FoodieGo to Cloud Run
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
@@ -13,28 +14,59 @@ env:
   DB_NAME: ${{ secrets.DB_NAME }}
   DB_USER: ${{ secrets.DB_USER }}
   DB_SECRET_NAME: ${{ secrets.DB_SECRET_NAME }}
+  APP_SECRET_NAME: ${{ secrets.APP_SECRET_NAME }}
   SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
 
 jobs:
   deploy:
+    name: Build and Deploy to Cloud Run
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: google-github-actions/auth@v3
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud using Workload Identity Federation
+        uses: google-github-actions/auth@v3
         with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-      - uses: google-github-actions/setup-gcloud@v3
-      - name: Configure Docker
-        run: gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
-      - name: Build image
+          workload_identity_provider: ${{ secrets.WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+
+      - name: Configure Docker for Artifact Registry
+        run: |
+          gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+
+      - name: Build Docker image
         run: |
           IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/$GAR_REPOSITORY/$SERVICE_NAME:$GITHUB_SHA"
           docker build -t $IMAGE .
           echo "IMAGE=$IMAGE" >> $GITHUB_ENV
-      - name: Push image
-        run: docker push $IMAGE
-      - name: Deploy API + Web to Cloud Run
+
+      - name: Push Docker image to Artifact Registry
         run: |
-          gcloud run deploy $SERVICE_NAME             --image $IMAGE             --region $REGION             --platform managed             --allow-unauthenticated             --service-account $SERVICE_ACCOUNT_EMAIL             --add-cloudsql-instances $INSTANCE_CONNECTION_NAME             --set-env-vars DB_NAME=$DB_NAME,DB_USER=$DB_USER,INSTANCE_CONNECTION_NAME=$INSTANCE_CONNECTION_NAME,AUTO_CREATE_DB=true,CORS_ORIGINS='*'             --set-secrets DB_PASS=$DB_SECRET_NAME:latest,SECRET_KEY=foodiego-secret-key:latest
-      - name: Show URL
-        run: gcloud run services describe $SERVICE_NAME --region $REGION --format='value(status.url)'
+          docker push $IMAGE
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy $SERVICE_NAME \
+            --image $IMAGE \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --service-account $SERVICE_ACCOUNT_EMAIL \
+            --add-cloudsql-instances $INSTANCE_CONNECTION_NAME \
+            --set-env-vars DB_NAME=$DB_NAME,DB_USER=$DB_USER,INSTANCE_CONNECTION_NAME=$INSTANCE_CONNECTION_NAME \
+            --set-secrets DB_PASS=$DB_SECRET_NAME:latest,SECRET_KEY=$APP_SECRET_NAME:latest
+
+      - name: Show Cloud Run URL
+        run: |
+          gcloud run services describe $SERVICE_NAME \
+            --region $REGION \
+            --format="value(status.url)"
